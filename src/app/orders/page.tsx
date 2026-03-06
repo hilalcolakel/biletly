@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Ticket, ArrowLeft, Shield, AlertTriangle, Check, Clock, XCircle, Upload, Package, ChevronRight } from 'lucide-react'
+import { Ticket, ArrowLeft, Shield, AlertTriangle, Check, Clock, XCircle, Upload, Package } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -15,7 +15,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
   disputed: { label: 'İncelemede', color: 'bg-orange-50 text-orange-700', icon: AlertTriangle },
 }
 
-export default function OrdersPage() {
+function OrdersContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -39,7 +39,6 @@ export default function OrdersPage() {
     }
     setUser(currentUser)
 
-    // Orders where I'm the buyer
     const { data: buying } = await supabase
       .from('orders')
       .select(`
@@ -52,7 +51,6 @@ export default function OrdersPage() {
 
     setBuyOrders(buying || [])
 
-    // Orders where I'm the seller
     const { data: selling } = await supabase
       .from('orders')
       .select(`
@@ -70,24 +68,16 @@ export default function OrdersPage() {
   const handleConfirmDelivery = async (orderId: string) => {
     const { error } = await supabase
       .from('orders')
-      .update({
-        status: 'completed',
-        confirmed_at: new Date().toISOString(),
-      })
+      .update({ status: 'completed', confirmed_at: new Date().toISOString() })
       .eq('id', orderId)
-
     if (!error) loadData()
   }
 
   const handleMarkDelivered = async (orderId: string) => {
     const { error } = await supabase
       .from('orders')
-      .update({
-        status: 'delivered',
-        delivered_at: new Date().toISOString(),
-      })
+      .update({ status: 'delivered', delivered_at: new Date().toISOString() })
       .eq('id', orderId)
-
     if (!error) loadData()
   }
 
@@ -103,7 +93,6 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-zinc-100">
         <div className="max-w-[980px] mx-auto px-6 h-12 flex items-center">
           <Link href="/" className="flex items-center gap-1.5">
@@ -119,51 +108,34 @@ export default function OrdersPage() {
           Dashboard
         </Link>
 
-        <h1 className="font-display text-[28px] font-bold tracking-tight mb-1">
-          Biletlerim
-        </h1>
-        <p className="text-sm text-zinc-400 mb-8">
-          Aldığın ve sattığın biletleri takip et.
-        </p>
+        <h1 className="font-display text-[28px] font-bold tracking-tight mb-1">Biletlerim</h1>
+        <p className="text-sm text-zinc-400 mb-8">Aldığın ve sattığın biletleri takip et.</p>
 
-        {/* Success message */}
         {successOrderId && (
           <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-100 mb-6">
             <Check className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-medium text-emerald-900">Ödeme başarılı!</p>
-              <p className="text-xs text-emerald-700 mt-0.5">
-                Ödemen emanete alındı. Satıcı bileti teslim ettiğinde bildirim alacaksın.
-              </p>
+              <p className="text-xs text-emerald-700 mt-0.5">Ödemen emanete alındı. Satıcı bileti teslim ettiğinde bildirim alacaksın.</p>
             </div>
           </div>
         )}
 
-        {/* Tabs */}
         <div className="flex gap-1 p-1 bg-zinc-100 rounded-xl mb-8">
           <button
             onClick={() => setActiveTab('buying')}
-            className={`flex-1 text-sm font-medium py-2 rounded-lg transition-all ${
-              activeTab === 'buying'
-                ? 'bg-white text-zinc-900 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-700'
-            }`}
+            className={`flex-1 text-sm font-medium py-2 rounded-lg transition-all ${activeTab === 'buying' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
           >
             Aldıklarım ({buyOrders.length})
           </button>
           <button
             onClick={() => setActiveTab('selling')}
-            className={`flex-1 text-sm font-medium py-2 rounded-lg transition-all ${
-              activeTab === 'selling'
-                ? 'bg-white text-zinc-900 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-700'
-            }`}
+            className={`flex-1 text-sm font-medium py-2 rounded-lg transition-all ${activeTab === 'selling' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
           >
             Sattıklarım ({sellOrders.length})
           </button>
         </div>
 
-        {/* Orders list */}
         {orders.length > 0 ? (
           <div className="space-y-3">
             {orders.map((order) => {
@@ -175,12 +147,9 @@ export default function OrdersPage() {
 
               return (
                 <div key={order.id} className="p-4 rounded-xl border border-zinc-100 hover:border-zinc-200 transition-all">
-                  {/* Header */}
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-display font-semibold text-sm">
-                        {event?.title || 'Etkinlik'}
-                      </h3>
+                      <h3 className="font-display font-semibold text-sm">{event?.title || 'Etkinlik'}</h3>
                       {date && (
                         <p className="text-xs text-zinc-400 mt-0.5">
                           {date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })} · {event?.venue}
@@ -193,25 +162,15 @@ export default function OrdersPage() {
                     </span>
                   </div>
 
-                  {/* Details */}
                   <div className="flex items-center justify-between text-xs text-zinc-400 mb-3">
-                    <span>
-                      {order.listing?.quantity} bilet · {order.delivery_type === 'transfer' ? 'Transfer' : 'PDF/QR'}
-                    </span>
-                    <span className="font-display font-bold text-base text-zinc-900">
-                      ₺{Number(order.amount).toLocaleString('tr-TR')}
-                    </span>
+                    <span>{order.listing?.quantity} bilet · {order.delivery_type === 'transfer' ? 'Transfer' : 'PDF/QR'}</span>
+                    <span className="font-display font-bold text-base text-zinc-900">₺{Number(order.amount).toLocaleString('tr-TR')}</span>
                   </div>
 
-                  {/* Counterparty */}
                   <div className="text-xs text-zinc-400 mb-3">
-                    {isBuyer
-                      ? `Satıcı: ${order.seller?.full_name || 'Anonim'}`
-                      : `Alıcı: ${order.buyer?.full_name || 'Anonim'}`
-                    }
+                    {isBuyer ? `Satıcı: ${order.seller?.full_name || 'Anonim'}` : `Alıcı: ${order.buyer?.full_name || 'Anonim'}`}
                   </div>
 
-                  {/* Actions based on status */}
                   {isBuyer && order.status === 'delivered' && (
                     <button
                       onClick={() => handleConfirmDelivery(order.id)}
@@ -241,7 +200,6 @@ export default function OrdersPage() {
                     </div>
                   )}
 
-                  {/* Order date */}
                   <p className="text-[10px] text-zinc-300 mt-3">
                     Sipariş: {new Date(order.created_at).toLocaleString('tr-TR')}
                   </p>
@@ -258,9 +216,7 @@ export default function OrdersPage() {
               {activeTab === 'buying' ? 'Henüz bilet almadın' : 'Henüz bilet satmadın'}
             </h3>
             <p className="text-sm text-zinc-400 mb-6">
-              {activeTab === 'buying'
-                ? 'Etkinlikleri keşfet ve ilk biletini al.'
-                : 'İlan oluştur ve biletini satışa çıkar.'}
+              {activeTab === 'buying' ? 'Etkinlikleri keşfet ve ilk biletini al.' : 'İlan oluştur ve biletini satışa çıkar.'}
             </p>
             <Link
               href={activeTab === 'buying' ? '/events' : '/listings/new'}
@@ -272,5 +228,17 @@ export default function OrdersPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-sm text-zinc-400">Yükleniyor...</p>
+      </div>
+    }>
+      <OrdersContent />
+    </Suspense>
   )
 }
