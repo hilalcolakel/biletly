@@ -113,9 +113,6 @@ export default function CheckoutPage({ params }: { params: { listingId: string }
       .update({ status: 'reserved' })
       .eq('id', listing.id)
 
-    // Update buyer purchase count
-    await supabase.rpc('increment_purchases', { user_id: user.id }).catch(() => {})
-
     router.push(`/orders?success=${order.id}`)
   }
 
