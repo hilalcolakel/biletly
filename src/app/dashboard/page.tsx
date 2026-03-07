@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Ticket, LogOut, Search, Plus } from 'lucide-react'
+import { Ticket, LogOut, Search, Plus, ShoppingBag, User, Settings } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = createServerSupabaseClient()
@@ -26,7 +26,10 @@ export default async function DashboardPage() {
             <Ticket className="w-[18px] h-[18px] text-zinc-900" strokeWidth={2.2} />
             <span className="font-display text-[15px] font-semibold tracking-tight">biletly</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
+            <Link href="/orders" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">Biletlerim</Link>
+            <Link href="/profile" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">Profil</Link>
+            <Link href="/admin" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">Admin</Link>
             <span className="text-sm text-zinc-500">
               {profile?.full_name || user.email}
             </span>
@@ -73,6 +76,32 @@ export default async function DashboardPage() {
             <div>
               <p className="text-sm font-semibold text-zinc-900">İlan Oluştur</p>
               <p className="text-xs text-zinc-400">Biletini satışa çıkar</p>
+            </div>
+          </Link>
+
+          <Link
+            href="/orders"
+            className="group flex items-center gap-4 p-5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:bg-zinc-100/80 transition-colors"
+          >
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-200">
+              <ShoppingBag className="w-4 h-4 text-zinc-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">Biletlerim</p>
+              <p className="text-xs text-zinc-400">Aldığın ve sattığın biletler</p>
+            </div>
+          </Link>
+
+          <Link
+            href="/profile"
+            className="group flex items-center gap-4 p-5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:bg-zinc-100/80 transition-colors"
+          >
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-200">
+              <User className="w-4 h-4 text-zinc-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">Profil</p>
+              <p className="text-xs text-zinc-400">Hesap ayarları ve trust score</p>
             </div>
           </Link>
         </div>
