@@ -30,85 +30,152 @@ function Navbar() {
 function PhoneMockup() {
   const events = [
     { title: 'Mabel Matiz', venue: 'Kuruçeşme Arena', date: '15 Nis', price: '₺450', cat: 'Konser', icon: Music, color: 'from-violet-500 to-purple-500' },
-    { title: 'Galatasaray vs Fenerbahçe', venue: 'Rams Park', date: '22 Nis', price: '₺800', cat: 'Spor', icon: Trophy, color: 'from-orange-500 to-amber-500' },
-    { title: 'Hamlet — Zorlu PSM', venue: 'Zorlu PSM', date: '28 Nis', price: '₺320', cat: 'Tiyatro', icon: Drama, color: 'from-emerald-500 to-teal-500' },
-    { title: 'Chill-Out Festival', venue: 'Life Park', date: '5 May', price: '₺650', cat: 'Festival', icon: PartyPopper, color: 'from-pink-500 to-rose-500' },
+    { title: 'GS vs FB', venue: 'Rams Park', date: '22 Nis', price: '₺800', cat: 'Spor', icon: Trophy, color: 'from-orange-500 to-amber-500' },
+    { title: 'Hamlet', venue: 'Zorlu PSM', date: '28 Nis', price: '₺320', cat: 'Tiyatro', icon: Drama, color: 'from-emerald-500 to-teal-500' },
+    { title: 'Chill-Out Fest', venue: 'Life Park', date: '5 May', price: '₺650', cat: 'Festival', icon: PartyPopper, color: 'from-pink-500 to-rose-500' },
   ]
 
   return (
-    <div className="animate-phone-bob" style={{ animationDelay: '0.6s' }}>
-      {/* Phone frame */}
-      <div className="w-[280px] md:w-[300px] bg-zinc-900 rounded-[2.5rem] p-2 shadow-2xl shadow-black/50 border border-zinc-700/50">
-        {/* Screen */}
-        <div className="bg-zinc-950 rounded-[2rem] overflow-hidden">
-          {/* Status bar */}
-          <div className="flex items-center justify-between px-5 pt-3 pb-1">
-            <span className="text-[10px] text-zinc-400 font-medium">21:30</span>
-            <div className="w-20 h-5 bg-zinc-900 rounded-full" />
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 border border-zinc-500 rounded-sm" />
-            </div>
+    <div className="relative">
+      {/* Floating card - top left */}
+      <div className="absolute -top-4 -left-16 z-20 animate-float" style={{ animationDelay: '0s' }}>
+        <div className="bg-amber-400 rounded-2xl p-4 shadow-xl shadow-amber-500/20 w-[130px]">
+          <Shield className="w-5 h-5 text-amber-900 mb-2" />
+          <p className="text-2xl font-extrabold text-amber-900 font-display">2.4K+</p>
+          <p className="text-[10px] text-amber-800 font-medium">Güvenli İşlem</p>
+        </div>
+      </div>
+
+      {/* Floating card - top right */}
+      <div className="absolute -top-2 -right-14 z-20 animate-float" style={{ animationDelay: '1s' }}>
+        <div className="bg-white rounded-2xl p-3 shadow-xl shadow-black/10 flex items-center gap-2.5 min-w-[150px]">
+          <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shrink-0">
+            <Music className="w-4 h-4 text-white" />
           </div>
-
-          {/* App header */}
-          <div className="px-4 pt-3 pb-2">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-5 h-5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-md flex items-center justify-center">
-                  <Ticket className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                </div>
-                <span className="text-[11px] font-bold text-white">biletly</span>
-              </div>
-              <div className="w-6 h-6 bg-zinc-800 rounded-full" />
-            </div>
-
-            {/* Search bar */}
-            <div className="flex items-center gap-2 bg-zinc-800/80 rounded-xl px-3 py-2 mb-3">
-              <Search className="w-3 h-3 text-zinc-500" />
-              <span className="text-[10px] text-zinc-500">Etkinlik ara...</span>
-            </div>
-
-            {/* Category pills */}
-            <div className="flex gap-1.5 mb-3 overflow-hidden">
-              {['Tümü', 'Konser', 'Spor', 'Tiyatro'].map((cat, i) => (
-                <span key={cat} className={`text-[9px] px-2.5 py-1 rounded-full whitespace-nowrap font-medium ${i === 0 ? 'bg-violet-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
-                  {cat}
-                </span>
-              ))}
-            </div>
+          <div>
+            <p className="text-[11px] font-bold text-zinc-900">Mabel Matiz</p>
+            <p className="text-[9px] text-zinc-500">₺450 · 3 ilan</p>
           </div>
+        </div>
+      </div>
 
-          {/* Event cards */}
-          <div className="px-4 pb-4 space-y-2.5">
-            {events.map((event, i) => (
-              <div key={i} className="bg-zinc-800/50 rounded-xl p-3 border border-zinc-700/30 flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${event.color} flex items-center justify-center shrink-0 shadow-lg`}>
-                  <event.icon className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-white truncate">{event.title}</p>
-                  <p className="text-[9px] text-zinc-500 truncate">{event.date} · {event.venue}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[11px] font-bold text-white">{event.price}</p>
-                  <p className="text-[8px] text-zinc-500">{event.cat}</p>
-                </div>
-              </div>
-            ))}
+      {/* Floating card - bottom left */}
+      <div className="absolute -bottom-2 -left-12 z-20 animate-float" style={{ animationDelay: '1.5s' }}>
+        <div className="bg-white rounded-2xl p-3 shadow-xl shadow-black/10 flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+            <BadgeCheck className="w-4 h-4 text-emerald-600" />
           </div>
+          <div>
+            <p className="text-[11px] font-bold text-zinc-900">Teslim onaylandı</p>
+            <p className="text-[9px] text-zinc-500">Ödeme aktarıldı</p>
+          </div>
+        </div>
+      </div>
 
-          {/* Bottom nav */}
-          <div className="flex items-center justify-around px-4 py-2.5 border-t border-zinc-800/80">
-            {[
-              { icon: Search, label: 'Keşfet', active: true },
-              { icon: Ticket, label: 'Biletlerim', active: false },
-              { icon: Star, label: 'Profil', active: false },
-            ].map((item) => (
-              <div key={item.label} className="flex flex-col items-center gap-0.5">
-                <item.icon className={`w-4 h-4 ${item.active ? 'text-violet-400' : 'text-zinc-600'}`} />
-                <span className={`text-[8px] ${item.active ? 'text-violet-400 font-medium' : 'text-zinc-600'}`}>{item.label}</span>
+      {/* Floating card - bottom right */}
+      <div className="absolute -bottom-6 -right-10 z-20 animate-float" style={{ animationDelay: '2s' }}>
+        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-4 shadow-xl shadow-violet-500/30 w-[120px]">
+          <Star className="w-4 h-4 text-white/80 mb-1.5" />
+          <p className="text-xl font-extrabold text-white font-display">92</p>
+          <p className="text-[10px] text-violet-200 font-medium">Trust Score</p>
+        </div>
+      </div>
+
+      {/* iPhone frame */}
+      <div className="relative z-10 animate-phone-bob" style={{ animationDelay: '0.6s' }}>
+        {/* Outer frame - titanium look */}
+        <div className="w-[270px] md:w-[290px] rounded-[3rem] p-[3px] bg-gradient-to-b from-zinc-600 via-zinc-400 to-zinc-600 shadow-2xl shadow-black/60">
+          {/* Inner frame */}
+          <div className="bg-zinc-900 rounded-[2.8rem] p-[6px]">
+            {/* Screen */}
+            <div className="bg-black rounded-[2.4rem] overflow-hidden relative">
+              {/* Dynamic Island */}
+              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-[90px] h-[28px] bg-black rounded-full z-30 flex items-center justify-center">
+                <div className="w-[8px] h-[8px] rounded-full bg-zinc-800 mr-3" />
               </div>
-            ))}
+
+              {/* Status bar */}
+              <div className="flex items-center justify-between px-7 pt-3.5 pb-0.5 relative z-20">
+                <span className="text-[10px] text-white font-semibold">21:30</span>
+                <div />
+                <div className="flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.18L12 21z" opacity="0.5"/></svg>
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+                  <div className="flex items-center">
+                    <div className="w-5 h-2.5 border border-white/50 rounded-sm relative">
+                      <div className="absolute inset-[1px] right-[2px] bg-white rounded-[1px]" style={{ width: '70%' }} />
+                    </div>
+                    <div className="w-[2px] h-[4px] bg-white/50 rounded-r-full ml-[1px]" />
+                  </div>
+                </div>
+              </div>
+
+              {/* App content */}
+              <div className="px-4 pt-4 pb-2">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-6 h-6 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <Ticket className="w-3 h-3 text-white" strokeWidth={3} />
+                    </div>
+                    <span className="text-[12px] font-bold text-white">biletly</span>
+                  </div>
+                  <div className="w-7 h-7 bg-zinc-800 rounded-full border border-zinc-700" />
+                </div>
+
+                {/* Search */}
+                <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl px-3.5 py-2.5 mb-4">
+                  <Search className="w-3.5 h-3.5 text-zinc-600" />
+                  <span className="text-[11px] text-zinc-600">Etkinlik ara...</span>
+                </div>
+
+                {/* Category pills */}
+                <div className="flex gap-2 mb-4">
+                  {['Tümü', 'Konser', 'Spor', 'Tiyatro'].map((cat, i) => (
+                    <span key={cat} className={`text-[10px] px-3 py-1.5 rounded-full whitespace-nowrap font-semibold ${i === 0 ? 'bg-violet-500 text-white' : 'bg-zinc-900 text-zinc-500 border border-zinc-800'}`}>
+                      {cat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Event list */}
+              <div className="px-4 pb-3 space-y-2">
+                {events.map((event, i) => (
+                  <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${event.color} flex items-center justify-center shrink-0 shadow-lg`}>
+                      <event.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-semibold text-white truncate">{event.title}</p>
+                      <p className="text-[10px] text-zinc-500 truncate">{event.date} · {event.venue}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[12px] font-bold text-white">{event.price}</p>
+                      <p className="text-[9px] text-violet-400 font-medium">{event.cat}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottom bar */}
+              <div className="flex items-center justify-around px-6 py-3 border-t border-zinc-900">
+                {[
+                  { icon: Search, label: 'Keşfet', active: true },
+                  { icon: Ticket, label: 'Biletlerim', active: false },
+                  { icon: Star, label: 'Profil', active: false },
+                ].map((item) => (
+                  <div key={item.label} className="flex flex-col items-center gap-1">
+                    <item.icon className={`w-5 h-5 ${item.active ? 'text-violet-400' : 'text-zinc-700'}`} />
+                    <span className={`text-[9px] ${item.active ? 'text-violet-400 font-semibold' : 'text-zinc-700'}`}>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Home indicator */}
+              <div className="flex justify-center pb-2">
+                <div className="w-28 h-1 bg-white/20 rounded-full" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -128,7 +195,7 @@ function Hero() {
       <div className="absolute inset-0 dot-grid opacity-30" />
 
       <div className="relative max-w-[1100px] mx-auto px-6 pt-28 pb-16 w-full">
-        <div className="grid lg:grid-cols-[1fr_340px] gap-12 items-center">
+        <div className="grid lg:grid-cols-[1fr_400px] gap-16 items-center">
           {/* Left content */}
           <div>
             <div className="animate-fade-in-up inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 text-violet-300 px-4 py-1.5 rounded-full text-sm font-medium mb-8">
