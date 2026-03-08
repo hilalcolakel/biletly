@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Ticket, ArrowLeft, Shield, AlertTriangle, Lock } from 'lucide-react'
+import { Ticket, ArrowLeft, Shield, AlertTriangle, Lock, Music, Trophy, Drama, PartyPopper, HelpCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function NewListingPage() {
@@ -12,12 +12,18 @@ export default function NewListingPage() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [events, setEvents] = useState<any[]>([])
   const [trustScore, setTrustScore] = useState(50)
-  const [selectedEvent, setSelectedEvent] = useState<any>(null)
 
   const [form, setForm] = useState({
-    event_id: '',
+    // Event info
+    event_title: '',
+    category: 'concert',
+    city: '',
+    venue: '',
+    event_date: '',
+    event_time: '',
+    source_platform: '',
+    // Listing info
     quantity: '1',
     section_info: '',
     asking_price: '',
@@ -25,52 +31,21 @@ export default function NewListingPage() {
     listing_type: 'transfer',
   })
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/auth/login')
-      return
+  useState(() => {
+    const loadTrust = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/auth/login'); return }
+      const { data: profile } = await supabase.from('profiles').select('trust_score').eq('id', user.id).single()
+      if (profile) setTrustScore(profile.trust_score)
     }
+    loadTrust()
+  })
 
-    // Get user trust score
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('trust_score')
-      .eq('id', user.id)
-      .single()
-
-    if (profile) setTrustScore(profile.trust_score)
-
-    // Get active events
-    const { data: eventsData } = await supabase
-      .from('events')
-      .select('*')
-      .eq('is_active', true)
-      .gte('event_date', new Date().toISOString())
-      .order('event_date', { ascending: true })
-
-    if (eventsData) setEvents(eventsData)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setForm({ ...form, [name]: value })
-
-    if (name === 'event_id') {
-      const event = events.find(ev => ev.id === value)
-      setSelectedEvent(event)
-    }
-  }
-
-  // PDF/QR eligibility
   const canUsePdfQr = trustScore >= 90
-  const eventDate = selectedEvent ? new Date(selectedEvent.event_date) : null
-  const hoursUntilEvent = eventDate ? (eventDate.getTime() - Date.now()) / (1000 * 60 * 60) : 999
-  const pdfQrTimeOk = hoursUntilEvent >= 72
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,29 +53,62 @@ export default function NewListingPage() {
     setLoading(true)
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/auth/login')
+    if (!user) { router.push('/auth/login'); return }
+
+    // Validate
+    if (!form.event_title || !form.city || !form.venue || !form.event_date || !form.event_time || !form.asking_price) {
+      setError('Lütfen tüm zorunlu alanları doldur.')
+      setLoading(false)
       return
     }
 
-    // Validate PDF/QR rules
+    const eventDate = new Date(`${form.event_date}T${form.event_time}`)
+
+    // PDF/QR check
     if (form.listing_type === 'pdf_qr') {
-      if (!canUsePdfQr) {
-        setError('PDF/QR ilan açmak için Trust Score ≥ 90 gerekli.')
-        setLoading(false)
-        return
-      }
-      if (!pdfQrTimeOk) {
-        setError('PDF/QR ilan sadece etkinliğe 72 saatten fazla varken açılabilir.')
-        setLoading(false)
-        return
-      }
+      if (!canUsePdfQr) { setError('PDF/QR ilan için Trust Score ≥ 90 gerekli.'); setLoading(false); return }
+      const hoursUntil = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60)
+      if (hoursUntil < 72) { setError('PDF/QR ilan etkinliğe 72+ saat varken açılabilir.'); setLoading(false); return }
     }
 
-    const { data, error: insertError } = await supabase
+    // 1. Create or find event
+    const { data: existingEvents } = await supabase
+      .from('events')
+      .select('id')
+      .ilike('title', form.event_title)
+      .eq('city', form.city)
+      .gte('event_date', new Date(form.event_date + 'T00:00:00').toISOString())
+      .lte('event_date', new Date(form.event_date + 'T23:59:59').toISOString())
+      .limit(1)
+
+    let eventId: string
+
+    if (existingEvents && existingEvents.length > 0) {
+      eventId = existingEvents[0].id
+    } else {
+      const { data: newEvent, error: eventError } = await supabase
+        .from('events')
+        .insert({
+          title: form.event_title,
+          category: form.category,
+          city: form.city,
+          venue: form.venue,
+          event_date: eventDate.toISOString(),
+          source_platform: form.source_platform || null,
+          created_by: user.id,
+        })
+        .select()
+        .single()
+
+      if (eventError) { setError(eventError.message); setLoading(false); return }
+      eventId = newEvent.id
+    }
+
+    // 2. Create listing
+    const { data: listing, error: listingError } = await supabase
       .from('listings')
       .insert({
-        event_id: form.event_id,
+        event_id: eventId,
         seller_id: user.id,
         listing_type: form.listing_type,
         quantity: parseInt(form.quantity),
@@ -111,198 +119,202 @@ export default function NewListingPage() {
       .select()
       .single()
 
-    if (insertError) {
-      setError(insertError.message)
-      setLoading(false)
-      return
-    }
+    if (listingError) { setError(listingError.message); setLoading(false); return }
 
-    router.push(`/events/${form.event_id}`)
+    router.push(`/events/${eventId}`)
   }
 
+  const categories = [
+    { value: 'concert', label: 'Konser', icon: Music },
+    { value: 'sport', label: 'Spor', icon: Trophy },
+    { value: 'theatre', label: 'Tiyatro', icon: Drama },
+    { value: 'festival', label: 'Festival', icon: PartyPopper },
+  ]
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-zinc-100">
+    <div className="min-h-screen bg-zinc-950">
+      <nav className="sticky top-0 z-50 glass-dark">
         <div className="max-w-[980px] mx-auto px-6 h-12 flex items-center">
-          <Link href="/" className="flex items-center gap-1.5">
-            <Ticket className="w-[18px] h-[18px] text-zinc-900" strokeWidth={2.2} />
-            <span className="font-display text-[15px] font-semibold tracking-tight">biletly</span>
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <Ticket className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+            </div>
+            <span className="font-display text-[15px] font-bold tracking-tight text-white">biletly</span>
           </Link>
         </div>
       </nav>
 
-      <div className="max-w-[480px] mx-auto px-6 py-12">
-        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-900 transition-colors mb-8">
+      <div className="max-w-[520px] mx-auto px-6 py-12">
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-white transition-colors mb-8">
           <ArrowLeft className="w-4 h-4" />
           Dashboard
         </Link>
 
-        <h1 className="font-display text-[28px] font-bold tracking-tight mb-1">
-          İlan Oluştur
-        </h1>
-        <p className="text-sm text-zinc-400 mb-8">
-          Biletini satışa çıkar.
-        </p>
+        <h1 className="font-display text-[28px] font-bold tracking-tight text-white mb-1">İlan Oluştur</h1>
+        <p className="text-sm text-zinc-500 mb-10">Biletini satışa çıkar. Etkinlik ve bilet bilgilerini gir.</p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Event Selection */}
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* ── ETKINLIK BİLGİLERİ ── */}
           <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1.5">Etkinlik</label>
-            <select
-              name="event_id"
-              value={form.event_id}
-              onChange={handleChange}
-              required
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400 transition-all appearance-none"
-            >
-              <option value="">Etkinlik seç...</option>
-              {events.map((event) => (
-                <option key={event.id} value={event.id}>
-                  {event.title} — {new Date(event.event_date).toLocaleDateString('tr-TR')}
-                </option>
-              ))}
-            </select>
-            <Link href="/events/new" className="inline-block text-xs text-zinc-400 hover:text-zinc-900 mt-1.5 transition-colors">
-              Etkinlik listede yok mu? Yeni ekle →
-            </Link>
-          </div>
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-6 h-6 bg-violet-500/20 rounded-lg flex items-center justify-center">
+                <span className="text-xs font-bold text-violet-400">1</span>
+              </div>
+              <h2 className="text-sm font-semibold text-white">Etkinlik Bilgileri</h2>
+            </div>
 
-          {/* Delivery Type */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-2">Teslim Tipi</label>
-            <div className="grid grid-cols-2 gap-3">
-              {/* Transfer */}
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, listing_type: 'transfer' })}
-                className={`p-4 rounded-xl border text-left transition-all ${
-                  form.listing_type === 'transfer'
-                    ? 'border-zinc-900 bg-zinc-50'
-                    : 'border-zinc-200 hover:border-zinc-300'
-                }`}
-              >
-                <Shield className={`w-5 h-5 mb-2 ${form.listing_type === 'transfer' ? 'text-emerald-600' : 'text-zinc-300'}`} />
-                <p className="text-sm font-semibold">Transfer</p>
-                <p className="text-[11px] text-zinc-400 mt-0.5">Önerilen yöntem</p>
-              </button>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Etkinlik Adı *</label>
+                <input
+                  type="text" name="event_title" value={form.event_title} onChange={handleChange}
+                  placeholder="Örn: Mabel Matiz — İstanbul Konseri"
+                  required
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/50 focus:bg-zinc-900/80 transition-all"
+                />
+              </div>
 
-              {/* PDF/QR */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (canUsePdfQr && pdfQrTimeOk) {
-                    setForm({ ...form, listing_type: 'pdf_qr' })
-                  }
-                }}
-                disabled={!canUsePdfQr || !pdfQrTimeOk}
-                className={`p-4 rounded-xl border text-left transition-all relative ${
-                  form.listing_type === 'pdf_qr'
-                    ? 'border-zinc-900 bg-zinc-50'
-                    : !canUsePdfQr || !pdfQrTimeOk
-                    ? 'border-zinc-100 bg-zinc-50/50 opacity-60 cursor-not-allowed'
-                    : 'border-zinc-200 hover:border-zinc-300'
-                }`}
-              >
-                {(!canUsePdfQr || !pdfQrTimeOk) && (
-                  <Lock className="absolute top-3 right-3 w-3.5 h-3.5 text-zinc-300" />
-                )}
-                <AlertTriangle className={`w-5 h-5 mb-2 ${form.listing_type === 'pdf_qr' ? 'text-amber-500' : 'text-zinc-300'}`} />
-                <p className="text-sm font-semibold">PDF/QR</p>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
-                  {!canUsePdfQr
-                    ? `Trust ≥ 90 gerekli (şu an: ${trustScore})`
-                    : !pdfQrTimeOk
-                    ? 'Etkinliğe 72+ saat olmalı'
-                    : 'Dosya paylaşımı'}
-                </p>
-              </button>
+              {/* Category */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Kategori</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.value} type="button"
+                      onClick={() => setForm({ ...form, category: cat.value })}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
+                        form.category === cat.value
+                          ? 'border-violet-500 bg-violet-500/10 text-violet-300'
+                          : 'border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                      }`}
+                    >
+                      <cat.icon className="w-4 h-4" />
+                      <span className="text-[11px] font-medium">{cat.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Şehir *</label>
+                  <input type="text" name="city" value={form.city} onChange={handleChange} placeholder="İstanbul" required
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/50 transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Mekan *</label>
+                  <input type="text" name="venue" value={form.venue} onChange={handleChange} placeholder="Kuruçeşme Arena" required
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/50 transition-all" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Tarih *</label>
+                  <input type="date" name="event_date" value={form.event_date} onChange={handleChange} required
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-violet-500/50 transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Saat *</label>
+                  <input type="time" name="event_time" value={form.event_time} onChange={handleChange} required
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-violet-500/50 transition-all" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Kaynak Platform <span className="text-zinc-600">(opsiyonel)</span></label>
+                <input type="text" name="source_platform" value={form.source_platform} onChange={handleChange} placeholder="Biletix, Biletinial, Passo..."
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/50 transition-all" />
+              </div>
             </div>
           </div>
 
-          {/* Quantity */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1.5">Bilet Adedi</label>
-            <input
-              type="number"
-              name="quantity"
-              value={form.quantity}
-              onChange={handleChange}
-              min="1"
-              max="10"
-              required
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 outline-none focus:border-zinc-400 focus:bg-white transition-all"
-            />
-          </div>
+          {/* Divider */}
+          <div className="w-full h-px bg-zinc-800" />
 
-          {/* Section Info */}
+          {/* ── BİLET BİLGİLERİ ── */}
           <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1.5">
-              Tribün / Koltuk Bilgisi <span className="text-zinc-300">(opsiyonel)</span>
-            </label>
-            <input
-              type="text"
-              name="section_info"
-              value={form.section_info}
-              onChange={handleChange}
-              placeholder="Örn: Tribün A, Sıra 5, Koltuk 12"
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-300 outline-none focus:border-zinc-400 focus:bg-white transition-all"
-            />
-          </div>
-
-          {/* Price */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1.5">Satış Fiyatı (₺)</label>
-            <input
-              type="number"
-              name="asking_price"
-              value={form.asking_price}
-              onChange={handleChange}
-              min="1"
-              step="0.01"
-              placeholder="0.00"
-              required
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-300 outline-none focus:border-zinc-400 focus:bg-white transition-all"
-            />
-          </div>
-
-          {/* Min Price */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1.5">
-              Minimum Kabul Fiyatı (₺) <span className="text-zinc-300">(opsiyonel)</span>
-            </label>
-            <input
-              type="number"
-              name="min_price"
-              value={form.min_price}
-              onChange={handleChange}
-              min="1"
-              step="0.01"
-              placeholder="Alıcılar bu fiyatın altında teklif veremez"
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-300 outline-none focus:border-zinc-400 focus:bg-white transition-all"
-            />
-          </div>
-
-          {/* Commission info */}
-          {form.asking_price && (
-            <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
-              <p className="text-xs text-zinc-500">
-                {parseFloat(form.asking_price) >= 500
-                  ? '≥ ₺500 — Komisyon satıcıdan kesilecek.'
-                  : '< ₺500 — Alıcı küçük bir hizmet bedeli ödeyecek. Sana kesinti yok.'}
-              </p>
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-6 h-6 bg-violet-500/20 rounded-lg flex items-center justify-center">
+                <span className="text-xs font-bold text-violet-400">2</span>
+              </div>
+              <h2 className="text-sm font-semibold text-white">Bilet Bilgileri</h2>
             </div>
-          )}
+
+            <div className="space-y-4">
+              {/* Delivery type */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Teslim Tipi</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={() => setForm({ ...form, listing_type: 'transfer' })}
+                    className={`p-4 rounded-xl border text-left transition-all ${
+                      form.listing_type === 'transfer' ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'
+                    }`}>
+                    <Shield className={`w-5 h-5 mb-2 ${form.listing_type === 'transfer' ? 'text-emerald-400' : 'text-zinc-600'}`} />
+                    <p className="text-sm font-semibold text-white">Transfer</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">Önerilen yöntem</p>
+                  </button>
+                  <button type="button"
+                    onClick={() => { if (canUsePdfQr) setForm({ ...form, listing_type: 'pdf_qr' }) }}
+                    disabled={!canUsePdfQr}
+                    className={`p-4 rounded-xl border text-left transition-all relative ${
+                      form.listing_type === 'pdf_qr' ? 'border-amber-500/50 bg-amber-500/10' :
+                      !canUsePdfQr ? 'border-zinc-800/50 opacity-40 cursor-not-allowed' : 'border-zinc-800 hover:border-zinc-700'
+                    }`}>
+                    {!canUsePdfQr && <Lock className="absolute top-3 right-3 w-3.5 h-3.5 text-zinc-600" />}
+                    <AlertTriangle className={`w-5 h-5 mb-2 ${form.listing_type === 'pdf_qr' ? 'text-amber-400' : 'text-zinc-600'}`} />
+                    <p className="text-sm font-semibold text-white">PDF/QR</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">{!canUsePdfQr ? `Trust ≥ 90 gerekli (${trustScore})` : 'Dosya paylaşımı'}</p>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Bilet Adedi *</label>
+                  <input type="number" name="quantity" value={form.quantity} onChange={handleChange} min="1" max="10" required
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-violet-500/50 transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Bölüm <span className="text-zinc-600">(ops.)</span></label>
+                  <input type="text" name="section_info" value={form.section_info} onChange={handleChange} placeholder="Tribün A, Sıra 5"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/50 transition-all" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Satış Fiyatı (₺) *</label>
+                <input type="number" name="asking_price" value={form.asking_price} onChange={handleChange} min="1" step="0.01" placeholder="0.00" required
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/50 transition-all" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Min. Kabul Fiyatı (₺) <span className="text-zinc-600">(opsiyonel)</span></label>
+                <input type="number" name="min_price" value={form.min_price} onChange={handleChange} min="1" step="0.01" placeholder="Bu fiyatın altında teklif kabul edilmez"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-violet-500/50 transition-all" />
+              </div>
+
+              {/* Commission info */}
+              {form.asking_price && (
+                <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+                  <p className="text-xs text-zinc-400">
+                    {parseFloat(form.asking_price) >= 500
+                      ? '≥ ₺500 — Komisyon satıcıdan kesilecek.'
+                      : '< ₺500 — Alıcı küçük bir hizmet bedeli ödeyecek. Sana kesinti yok.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
 
           {error && (
-            <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-xs text-red-400">{error}</p>
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-zinc-900 hover:bg-black text-white text-sm font-medium rounded-xl px-4 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-          >
+          <button type="submit" disabled={loading}
+            className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white text-sm font-semibold rounded-xl px-4 py-3.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] shadow-lg shadow-violet-500/20">
             {loading ? 'Yayınlanıyor...' : 'İlanı Yayınla'}
           </button>
         </form>

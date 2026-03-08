@@ -1,125 +1,83 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Ticket, LogOut, Search, Plus, ShoppingBag, User, Settings } from 'lucide-react'
+import { Ticket, LogOut, Search, Plus, ShoppingBag, User, Settings, ChevronRight } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/auth/login')
-  }
+  if (!user) redirect('/auth/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+
+  const ts = profile?.trust_score ?? 50
+  const tsColor = ts >= 90 ? 'from-emerald-500 to-teal-400' : ts >= 70 ? 'from-blue-500 to-cyan-400' : ts >= 50 ? 'from-amber-500 to-orange-400' : 'from-red-500 to-rose-400'
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="border-b border-zinc-100">
+    <div className="min-h-screen bg-zinc-950">
+      <nav className="sticky top-0 z-50 glass-dark">
         <div className="max-w-[980px] mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-1.5">
-            <Ticket className="w-[18px] h-[18px] text-zinc-900" strokeWidth={2.2} />
-            <span className="font-display text-[15px] font-semibold tracking-tight">biletly</span>
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <Ticket className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+            </div>
+            <span className="font-display text-[15px] font-bold tracking-tight text-white">biletly</span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link href="/orders" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">Biletlerim</Link>
-            <Link href="/profile" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">Profil</Link>
-            <Link href="/admin" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">Admin</Link>
-            <span className="text-sm text-zinc-500">
-              {profile?.full_name || user.email}
-            </span>
+            <Link href="/orders" className="text-xs text-zinc-400 hover:text-white transition-colors">Biletlerim</Link>
+            <Link href="/profile" className="text-xs text-zinc-400 hover:text-white transition-colors">Profil</Link>
+            <Link href="/admin" className="text-xs text-zinc-400 hover:text-white transition-colors">Admin</Link>
+            <span className="text-sm text-zinc-500">{profile?.full_name || user.email}</span>
             <form action="/auth/signout" method="post">
-              <button className="text-zinc-400 hover:text-zinc-600 transition-colors">
-                <LogOut className="w-4 h-4" />
-              </button>
+              <button className="text-zinc-600 hover:text-zinc-400 transition-colors"><LogOut className="w-4 h-4" /></button>
             </form>
           </div>
         </div>
       </nav>
 
-      {/* Content */}
       <div className="max-w-[980px] mx-auto px-6 py-16">
-        <h1 className="font-display text-3xl font-bold tracking-tight mb-2">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-white mb-2">
           Hoş geldin{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}.
         </h1>
-        <p className="text-zinc-400 text-base mb-12">
-          Etkinlikleri keşfet, biletini al veya sat.
-        </p>
+        <p className="text-zinc-500 text-base mb-12">Etkinlikleri keşfet, biletini al veya sat.</p>
 
         {/* Quick actions */}
-        <div className="grid sm:grid-cols-2 gap-4 max-w-lg">
-          <Link
-            href="/events"
-            className="group flex items-center gap-4 p-5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:bg-zinc-100/80 transition-colors"
-          >
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-200">
-              <Search className="w-4 h-4 text-zinc-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-zinc-900">Etkinlik Keşfet</p>
-              <p className="text-xs text-zinc-400">Bilet ara ve teklif ver</p>
-            </div>
-          </Link>
-
-          <Link
-            href="/listings/new"
-            className="group flex items-center gap-4 p-5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:bg-zinc-100/80 transition-colors"
-          >
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-200">
-              <Plus className="w-4 h-4 text-zinc-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-zinc-900">İlan Oluştur</p>
-              <p className="text-xs text-zinc-400">Biletini satışa çıkar</p>
-            </div>
-          </Link>
-
-          <Link
-            href="/orders"
-            className="group flex items-center gap-4 p-5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:bg-zinc-100/80 transition-colors"
-          >
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-200">
-              <ShoppingBag className="w-4 h-4 text-zinc-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-zinc-900">Biletlerim</p>
-              <p className="text-xs text-zinc-400">Aldığın ve sattığın biletler</p>
-            </div>
-          </Link>
-
-          <Link
-            href="/profile"
-            className="group flex items-center gap-4 p-5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:bg-zinc-100/80 transition-colors"
-          >
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-200">
-              <User className="w-4 h-4 text-zinc-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-zinc-900">Profil</p>
-              <p className="text-xs text-zinc-400">Hesap ayarları ve trust score</p>
-            </div>
-          </Link>
+        <div className="grid sm:grid-cols-2 gap-3 max-w-xl mb-12">
+          {[
+            { href: '/events', icon: Search, title: 'Etkinlik Keşfet', desc: 'Bilet ara ve teklif ver', gradient: 'from-blue-500 to-cyan-400' },
+            { href: '/listings/new', icon: Plus, title: 'İlan Oluştur', desc: 'Biletini satışa çıkar', gradient: 'from-violet-500 to-purple-500' },
+            { href: '/orders', icon: ShoppingBag, title: 'Biletlerim', desc: 'Aldığın ve sattığın biletler', gradient: 'from-orange-500 to-amber-400' },
+            { href: '/profile', icon: User, title: 'Profil', desc: 'Hesap ayarları ve trust score', gradient: 'from-emerald-500 to-teal-400' },
+          ].map((item) => (
+            <Link key={item.href} href={item.href}
+              className="group flex items-center gap-4 p-4 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all card-hover">
+              <div className={`w-10 h-10 bg-gradient-to-br ${item.gradient} rounded-xl flex items-center justify-center shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
+                <item.icon className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-white">{item.title}</p>
+                <p className="text-xs text-zinc-500">{item.desc}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-zinc-700 group-hover:text-zinc-500 transition-colors" />
+            </Link>
+          ))}
         </div>
 
         {/* Trust Score */}
-        <div className="mt-12 p-6 rounded-2xl bg-zinc-50 border border-zinc-100 max-w-lg">
-          <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium mb-2">Trust Score</p>
-          <div className="flex items-end gap-3">
-            <span className="font-display text-4xl font-bold tracking-tight">
-              {profile?.trust_score ?? 50}
+        <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 max-w-xl">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Trust Score</p>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-r ${tsColor} text-white`}>
+              {ts >= 90 ? 'Güvenilir' : ts >= 70 ? 'İyi' : ts >= 50 ? 'Orta' : 'Düşük'}
             </span>
-            <span className="text-sm text-zinc-400 mb-1">/ 100</span>
           </div>
-          <div className="mt-3 w-full bg-zinc-200 rounded-full h-1.5">
-            <div
-              className="bg-zinc-900 h-1.5 rounded-full transition-all"
-              style={{ width: `${profile?.trust_score ?? 50}%` }}
-            />
+          <div className="flex items-end gap-3 mb-3">
+            <span className="font-display text-4xl font-bold tracking-tight text-white">{ts}</span>
+            <span className="text-sm text-zinc-600 mb-1">/ 100</span>
+          </div>
+          <div className="w-full bg-zinc-800 rounded-full h-2">
+            <div className={`h-2 rounded-full bg-gradient-to-r ${tsColor} transition-all`} style={{ width: `${ts}%` }} />
           </div>
         </div>
       </div>
