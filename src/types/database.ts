@@ -4,18 +4,76 @@ export type ListingStatus = 'active' | 'reserved' | 'sold' | 'expired' | 'cancel
 export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'countered' | 'expired'
 export type OrderStatus = 'pending_payment' | 'paid_escrow' | 'delivered' | 'completed' | 'refunded' | 'disputed'
 export type DeliveryType = 'transfer' | 'pdf_qr'
+export type KycStatus = 'pending' | 'approved' | 'rejected'
+export type LegalDocumentType = 'kvkk' | 'terms' | 'seller_agreement' | 'privacy'
+export type KycDocumentType = 'id_card' | 'passport' | 'driver_license' | 'student_id'
 
 export interface Profile {
   id: string
   email: string
   full_name: string | null
   avatar_url: string | null
+  phone: string | null
+  role: UserRole
   trust_score: number
   total_sales: number
   total_purchases: number
   is_verified: boolean
+  is_banned: boolean
+  listing_limit: number
+  // Campus
+  campus_name: string | null
+  campus_email: string | null
+  campus_verified: boolean
+  campus_verified_at: string | null
+  // KYC
+  kyc_status: KycStatus
+  kyc_submitted_at: string | null
+  // KVKK
+  kvkk_accepted: boolean
+  kvkk_accepted_at: string | null
+  kvkk_version: string | null
+  // Seller agreement
+  seller_agreement_accepted: boolean
+  seller_agreement_version: string | null
   created_at: string
   updated_at: string
+}
+
+export interface LegalDocument {
+  id: string
+  type: LegalDocumentType
+  version: string
+  title: string
+  content: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CampusRule {
+  id: string
+  campus_name: string
+  email_domain: string
+  invite_code: string | null
+  is_active: boolean
+  max_users: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface KycSubmission {
+  id: string
+  user_id: string
+  document_type: KycDocumentType
+  document_url: string
+  status: KycStatus
+  reviewed_by: string | null
+  review_note: string | null
+  created_at: string
+  reviewed_at: string | null
+  // Joined
+  user?: Profile
 }
 
 export interface Event {

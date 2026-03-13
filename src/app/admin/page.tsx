@@ -77,9 +77,12 @@ export default function AdminPage() {
   ]
 
   const menuItems = [
-    { label: 'Kullanıcı Yönetimi', desc: 'Trust score, ban, ilan limiti', href: '/admin/users', icon: Users },
+    { label: 'Kullanıcı Yönetimi', desc: 'Rol, trust score, ban, ilan limiti', href: '/admin/users', icon: Users },
     { label: 'Etkinlik Yönetimi', desc: 'Merge, düzenle, sil', href: '/admin/events', icon: Calendar },
     { label: 'Dispute Çözümü', desc: 'Açık şikayetleri değerlendir', href: '/admin/disputes', icon: AlertTriangle },
+    { label: 'Kampüs Kuralları', desc: 'Kampüs doğrulama & davet kodları', href: '/admin/campus-rules', icon: ShieldCheck },
+    { label: 'KYC İncelemeleri', desc: 'Kimlik doğrulama başvuruları', href: '/admin/kyc', icon: ShieldCheck },
+    { label: 'Hukuki Metinler', desc: 'KVKK, kullanım koşulları versiyonları', href: '/admin/legal', icon: BarChart3 },
   ]
 
   return (
