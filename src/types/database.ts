@@ -83,10 +83,43 @@ export interface Event {
   city: string
   venue: string
   event_date: string
+  description: string | null
+  artist: string | null
+  slug: string | null
+  min_ticket_price: number | null
+  max_ticket_price: number | null
+  tags: string[]
   source_platform: string | null
   image_url: string | null
   created_by: string
   is_active: boolean
+  created_at: string
+  updated_at: string
+  // Joined
+  constraints?: EventConstraint
+}
+
+export interface EventCategory {
+  id: string
+  name: string
+  slug: string
+  icon: string
+  color: string
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface EventConstraint {
+  id: string
+  event_id: string
+  allowed_delivery_types: string[]
+  max_ticket_price: number | null
+  min_seller_trust_score: number
+  max_listings_per_seller: number
+  requires_proof: boolean
+  notes: string | null
   created_at: string
   updated_at: string
 }
