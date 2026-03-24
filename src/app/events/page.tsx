@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Ticket, Calendar, MapPin, Search, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Ticket, Calendar, MapPin, Search, ArrowRight, ArrowLeft, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const CATEGORY_META: Record<string, { icon: string; color: string; label: string }> = {
@@ -19,9 +19,14 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
     const load = async () => {
+      // Check auth state
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      setUser(currentUser)
+
       const { data } = await supabase
         .from('events')
         .select('*, listings(count)')
@@ -47,23 +52,34 @@ export default function EventsPage() {
       <nav className="fixed top-0 left-0 right-0 z-50">
         <div className="max-w-[1200px] mx-auto px-6 pt-4">
           <div className="flex items-center justify-between h-14 px-6 rounded-full bg-white/[0.03] backdrop-blur-xl border border-white/[0.06]">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-gradient-to-br from-[#5227FF] to-[#B19EEF] rounded-xl flex items-center justify-center shadow-lg shadow-[#5227FF]/30">
                 <Ticket className="w-4 h-4 text-white" strokeWidth={2.5} />
               </div>
               <span className="font-display text-[17px] font-bold tracking-tight text-white">biletly</span>
             </Link>
-            <div className="flex items-center gap-3">
-              <Link href="/auth/login" className="hidden sm:block text-[13px] text-zinc-400 hover:text-white transition-colors px-4 py-2 rounded-full">Giriş</Link>
-              <Link href="/auth/register" className="text-[13px] font-semibold text-white bg-white/[0.08] hover:bg-white/[0.14] backdrop-blur-sm px-5 py-2 rounded-full transition-all border border-white/[0.08]">Başla</Link>
-            </div>
+            {user ? (
+              <div className="flex items-center gap-5">
+                <Link href="/orders" className="text-xs text-zinc-400 hover:text-white transition-colors">Biletlerim</Link>
+                <Link href="/profile" className="text-xs text-zinc-400 hover:text-white transition-colors">Profil</Link>
+                <span className="text-sm text-zinc-500">{user.email}</span>
+                <form action="/auth/signout" method="post">
+                  <button className="text-zinc-600 hover:text-zinc-400 transition-colors"><LogOut className="w-4 h-4" /></button>
+                </form>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link href="/auth/login" className="hidden sm:block text-[13px] text-zinc-400 hover:text-white transition-colors px-4 py-2 rounded-full">Giriş</Link>
+                <Link href="/auth/register" className="text-[13px] font-semibold text-white bg-white/[0.08] hover:bg-white/[0.14] backdrop-blur-sm px-5 py-2 rounded-full transition-all border border-white/[0.08]">Başla</Link>
+              </div>
+            )}
           </div>
         </div>
       </nav>
 
       <div className="max-w-[1200px] mx-auto px-6 pt-32 pb-20">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-zinc-600 hover:text-white transition-colors mb-8">
-          <ArrowLeft className="w-4 h-4" /> Ana Sayfa
+        <Link href={user ? '/dashboard' : '/'} className="inline-flex items-center gap-1.5 text-sm text-zinc-600 hover:text-white transition-colors mb-8">
+          <ArrowLeft className="w-4 h-4" /> {user ? 'Dashboard' : 'Ana Sayfa'}
         </Link>
 
         <h1 className="font-display text-[clamp(2rem,5vw,3rem)] font-extrabold tracking-[-0.03em] text-white mb-2">Etkinlikler</h1>
