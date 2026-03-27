@@ -56,7 +56,7 @@ export default function ProfilePage() {
 
   if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center"><p className="text-sm text-zinc-500">Yükleniyor...</p></div>
 
-  const ts = profile?.trust_score ?? 0
+  const ts = Math.min(5, profile?.trust_score ?? 0)
   const tsColor = ts >= 4 ? 'from-emerald-500 to-teal-400' : ts >= 3 ? 'from-blue-500 to-cyan-400' : ts >= 2 ? 'from-amber-500 to-orange-400' : 'from-red-500 to-rose-400'
   const tsLabel = ts >= 4 ? 'Güvenilir Satıcı' : ts >= 3 ? 'İyi' : ts >= 2 ? 'Orta' : profile?.total_sales > 0 ? 'Düşük' : 'Henüz puan yok'
 

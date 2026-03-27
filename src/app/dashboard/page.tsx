@@ -11,7 +11,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-  const ts = profile?.trust_score ?? 0
+  const ts = Math.min(5, profile?.trust_score ?? 0)
   const tsColor = ts >= 4 ? 'from-emerald-500 to-teal-400' : ts >= 3 ? 'from-blue-500 to-cyan-400' : ts >= 2 ? 'from-amber-500 to-orange-400' : 'from-red-500 to-rose-400'
 
   return (
