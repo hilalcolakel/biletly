@@ -41,7 +41,7 @@ interface ConstraintForm {
 }
 
 const emptyConstraint: ConstraintForm = {
-  allowed_delivery_types: ['transfer', 'pdf_qr'],
+  allowed_delivery_types: ['pdf_qr'],
   max_ticket_price: '', min_seller_trust_score: '0',
   max_listings_per_seller: '5', requires_proof: false, notes: ''
 }
@@ -122,7 +122,7 @@ export default function AdminEventsPage() {
     const c = event.event_constraints?.[0]
     if (c) {
       setConstraintForm({
-        allowed_delivery_types: c.allowed_delivery_types || ['transfer', 'pdf_qr'],
+        allowed_delivery_types: c.allowed_delivery_types || ['pdf_qr'],
         max_ticket_price: c.max_ticket_price?.toString() || '',
         min_seller_trust_score: c.min_seller_trust_score?.toString() || '0',
         max_listings_per_seller: c.max_listings_per_seller?.toString() || '5',
@@ -357,27 +357,10 @@ export default function AdminEventsPage() {
               <button onClick={() => setShowConstraintModal(false)} className="p-1 hover:bg-zinc-100 rounded-lg"><X className="w-5 h-5 text-zinc-400" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-2">İzin Verilen Teslim Yöntemleri</label>
-                <div className="flex gap-3">
-                  {['transfer', 'pdf_qr'].map(type => (
-                    <label key={type} className="flex items-center gap-2 text-sm">
-                      <input type="checkbox"
-                        checked={constraintForm.allowed_delivery_types.includes(type)}
-                        onChange={e => {
-                          setConstraintForm(prev => ({
-                            ...prev,
-                            allowed_delivery_types: e.target.checked
-                              ? [...prev.allowed_delivery_types, type]
-                              : prev.allowed_delivery_types.filter(t => t !== type)
-                          }))
-                        }}
-                        className="rounded border-zinc-300" />
-                      {type === 'transfer' ? 'Transfer' : 'PDF / QR'}
-                    </label>
-                  ))}
+                <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-2">Teslim Yöntemi</label>
+                <p className="text-sm text-zinc-600">PDF / QR (tek yöntem)</p>
                 </div>
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1">Max Bilet Fiyatı (₺)</label>
@@ -385,8 +368,8 @@ export default function AdminEventsPage() {
                     className="w-full border border-zinc-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-zinc-400" placeholder="Limit yok" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-500 mb-1">Min Satıcı Trust Score</label>
-                  <input type="number" min="0" max="100" value={constraintForm.min_seller_trust_score} onChange={e => setConstraintForm({...constraintForm, min_seller_trust_score: e.target.value})}
+                  <label className="block text-xs font-medium text-zinc-500 mb-1">Min Satıcı Puanı</label>
+                  <input type="number" min="0" max="5" step="0.1" value={constraintForm.min_seller_trust_score} onChange={e => setConstraintForm({...constraintForm, min_seller_trust_score: e.target.value})}
                     className="w-full border border-zinc-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-zinc-400" />
                 </div>
               </div>

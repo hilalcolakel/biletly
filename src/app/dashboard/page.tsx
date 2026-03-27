@@ -11,8 +11,8 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-  const ts = profile?.trust_score ?? 50
-  const tsColor = ts >= 90 ? 'from-emerald-500 to-teal-400' : ts >= 70 ? 'from-blue-500 to-cyan-400' : ts >= 50 ? 'from-amber-500 to-orange-400' : 'from-red-500 to-rose-400'
+  const ts = profile?.trust_score ?? 0
+  const tsColor = ts >= 4 ? 'from-emerald-500 to-teal-400' : ts >= 3 ? 'from-blue-500 to-cyan-400' : ts >= 2 ? 'from-amber-500 to-orange-400' : 'from-red-500 to-rose-400'
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -48,7 +48,7 @@ export default async function DashboardPage() {
             { href: '/events', icon: Search, title: 'Etkinlik Keşfet', desc: 'Bilet ara ve teklif ver', gradient: 'from-blue-500 to-cyan-400' },
             { href: '/listings/new', icon: Plus, title: 'İlan Oluştur', desc: 'Biletini satışa çıkar', gradient: 'from-violet-500 to-purple-500' },
             { href: '/orders', icon: ShoppingBag, title: 'Biletlerim', desc: 'Aldığın ve sattığın biletler', gradient: 'from-orange-500 to-amber-400' },
-            { href: '/profile', icon: User, title: 'Profil', desc: 'Hesap ayarları ve trust score', gradient: 'from-emerald-500 to-teal-400' },
+            { href: '/profile', icon: User, title: 'Profil', desc: 'Hesap ayarları ve satıcı puanı', gradient: 'from-emerald-500 to-teal-400' },
           ].map((item) => (
             <Link key={item.href} href={item.href}
               className="group flex items-center gap-4 p-4 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all card-hover">
@@ -67,17 +67,17 @@ export default async function DashboardPage() {
         {/* Trust Score */}
         <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 max-w-xl">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Trust Score</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Satıcı Puanı</p>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full bg-gradient-to-r ${tsColor} text-white`}>
-              {ts >= 90 ? 'Güvenilir' : ts >= 70 ? 'İyi' : ts >= 50 ? 'Orta' : 'Düşük'}
+              {ts >= 4 ? 'Güvenilir' : ts >= 3 ? 'İyi' : ts >= 2 ? 'Orta' : profile?.total_sales > 0 ? 'Düşük' : 'Yeni'}
             </span>
           </div>
           <div className="flex items-end gap-3 mb-3">
-            <span className="font-display text-4xl font-bold tracking-tight text-white">{ts}</span>
-            <span className="text-sm text-zinc-600 mb-1">/ 100</span>
+            <span className="font-display text-4xl font-bold tracking-tight text-white">{ts > 0 ? ts.toFixed(1) : '—'}</span>
+            <span className="text-sm text-zinc-600 mb-1">/ 5</span>
           </div>
           <div className="w-full bg-zinc-800 rounded-full h-2">
-            <div className={`h-2 rounded-full bg-gradient-to-r ${tsColor} transition-all`} style={{ width: `${ts}%` }} />
+            <div className={`h-2 rounded-full bg-gradient-to-r ${tsColor} transition-all`} style={{ width: `${(ts / 5) * 100}%` }} />
           </div>
         </div>
       </div>

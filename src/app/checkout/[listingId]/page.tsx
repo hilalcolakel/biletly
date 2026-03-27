@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Ticket, ArrowLeft, Shield, AlertTriangle, Check, Lock, Calendar, MapPin } from 'lucide-react'
+import { Ticket, ArrowLeft, Lock, Calendar, MapPin, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const PLATFORM_FEE_PERCENT = 5 // 5% fee
@@ -18,7 +18,6 @@ export default function CheckoutPage({ params }: { params: { listingId: string }
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
-  const [riskAccepted, setRiskAccepted] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -59,7 +58,6 @@ export default function CheckoutPage({ params }: { params: { listingId: string }
   const isBuyerFee = amount < 500
   const platformFee = amount * (PLATFORM_FEE_PERCENT / 100)
   const totalForBuyer = isBuyerFee ? amount + platformFee : amount
-  const isPdfQr = listing?.listing_type === 'pdf_qr'
 
   // SLA calculation
   const getSlaDuration = () => {
@@ -70,11 +68,6 @@ export default function CheckoutPage({ params }: { params: { listingId: string }
 
   const handleCheckout = async () => {
     setError('')
-
-    if (isPdfQr && !riskAccepted) {
-      setError('PDF/QR risk uyarısını kabul etmeniz gerekiyor.')
-      return
-    }
 
     if (user.id === listing.seller_id) {
       setError('Kendi ilanınızı satın alamazsınız.')
@@ -95,7 +88,7 @@ export default function CheckoutPage({ params }: { params: { listingId: string }
         platform_fee: platformFee,
         fee_paid_by: isBuyerFee ? 'buyer' : 'seller',
         status: 'paid_escrow',
-        delivery_type: listing.listing_type,
+        delivery_type: 'pdf_qr',
         sla_deadline: new Date(Date.now() + (getSlaDuration() === '3 saat' ? 3 : 24) * 60 * 60 * 1000).toISOString(),
       })
       .select()
@@ -177,11 +170,7 @@ export default function CheckoutPage({ params }: { params: { listingId: string }
           <div className="flex justify-between py-2.5 border-b border-zinc-100">
             <span className="text-sm text-zinc-500">Teslim yöntemi</span>
             <span className="text-sm font-medium flex items-center gap-1.5">
-              {isPdfQr ? (
-                <><AlertTriangle className="w-3 h-3 text-amber-500" /> PDF/QR</>
-              ) : (
-                <><Shield className="w-3 h-3 text-emerald-600" /> Transfer</>
-              )}
+              <FileText className="w-3 h-3 text-violet-500" /> PDF/QR
             </span>
           </div>
           <div className="flex justify-between py-2.5 border-b border-zinc-100">
@@ -216,27 +205,6 @@ export default function CheckoutPage({ params }: { params: { listingId: string }
           </div>
         </div>
 
-        {/* PDF/QR risk checkbox */}
-        {isPdfQr && (
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 mb-6">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={riskAccepted}
-                onChange={(e) => setRiskAccepted(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
-              />
-              <div>
-                <p className="text-sm font-medium text-amber-900">PDF/QR Risk Uyarısı</p>
-                <p className="text-xs text-amber-700 mt-0.5">
-                  Bu bilet transfer yerine PDF/QR dosya olarak teslim edilecektir.
-                  Transfer yöntemine göre risk daha yüksektir. Anladım ve kabul ediyorum.
-                </p>
-              </div>
-            </label>
-          </div>
-        )}
-
         {error && (
           <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>
         )}
@@ -244,7 +212,7 @@ export default function CheckoutPage({ params }: { params: { listingId: string }
         {/* Pay button */}
         <button
           onClick={handleCheckout}
-          disabled={processing || (isPdfQr && !riskAccepted)}
+          disabled={processing}
           className="w-full bg-zinc-900 hover:bg-black text-white text-sm font-medium rounded-xl px-4 py-3.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] flex items-center justify-center gap-2"
         >
           {processing ? (

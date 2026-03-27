@@ -77,7 +77,7 @@ export default function AdminPage() {
   ]
 
   const menuItems = [
-    { label: 'Kullanıcı Yönetimi', desc: 'Rol, trust score, ban, ilan limiti', href: '/admin/users', icon: Users },
+    { label: 'Kullanıcı Yönetimi', desc: 'Rol, satıcı puanı, ban, ilan limiti', href: '/admin/users', icon: Users },
     { label: 'Etkinlik Yönetimi', desc: 'Oluştur, düzenle, kısıtlar', href: '/admin/events', icon: Calendar },
     { label: 'Kategori Yönetimi', desc: 'Kategori & taksonomi yönetimi', href: '/admin/categories', icon: Tag },
     { label: 'Dispute Çözümü', desc: 'Açık şikayetleri değerlendir', href: '/admin/disputes', icon: AlertTriangle },

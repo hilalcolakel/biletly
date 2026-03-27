@@ -33,7 +33,7 @@ export default function AdminUsersPage() {
   }
 
   const handleUpdateTrustScore = async (userId: string, newScore: number) => {
-    const score = Math.max(0, Math.min(100, newScore))
+    const score = Math.max(0, Math.min(5, newScore))
     await supabase.from('profiles').update({ trust_score: score }).eq('id', userId)
     loadData()
   }
@@ -163,7 +163,7 @@ export default function AdminUsersPage() {
                             <GraduationCap className="w-2.5 h-2.5" /> {u.campus_name || 'Kampüs'}
                           </span>
                         )}
-                        {u.trust_score >= 90 && (
+                        {u.trust_score >= 4 && (
                           <span className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
                             <Star className="w-2.5 h-2.5" /> Güvenilir
                           </span>
@@ -201,9 +201,9 @@ export default function AdminUsersPage() {
                   </div>
                   {/* Trust Score */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-zinc-400">Trust:</span>
-                    <input type="number" defaultValue={u.trust_score} min={0} max={100}
-                      onBlur={(e) => handleUpdateTrustScore(u.id, parseInt(e.target.value))}
+                    <span className="text-[11px] text-zinc-400">Puan:</span>
+                    <input type="number" defaultValue={u.trust_score} min={0} max={5} step={0.1}
+                      onBlur={(e) => handleUpdateTrustScore(u.id, parseFloat(e.target.value))}
                       className="w-14 bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-xs text-center outline-none focus:border-zinc-400" />
                   </div>
                   {/* Listing Limit */}

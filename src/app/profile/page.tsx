@@ -56,9 +56,9 @@ export default function ProfilePage() {
 
   if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center"><p className="text-sm text-zinc-500">Yükleniyor...</p></div>
 
-  const ts = profile?.trust_score ?? 50
-  const tsColor = ts >= 90 ? 'from-emerald-500 to-teal-400' : ts >= 70 ? 'from-blue-500 to-cyan-400' : ts >= 50 ? 'from-amber-500 to-orange-400' : 'from-red-500 to-rose-400'
-  const tsLabel = ts >= 90 ? 'Güvenilir Satıcı' : ts >= 70 ? 'İyi' : ts >= 50 ? 'Orta' : 'Düşük'
+  const ts = profile?.trust_score ?? 0
+  const tsColor = ts >= 4 ? 'from-emerald-500 to-teal-400' : ts >= 3 ? 'from-blue-500 to-cyan-400' : ts >= 2 ? 'from-amber-500 to-orange-400' : 'from-red-500 to-rose-400'
+  const tsLabel = ts >= 4 ? 'Güvenilir Satıcı' : ts >= 3 ? 'İyi' : ts >= 2 ? 'Orta' : profile?.total_sales > 0 ? 'Düşük' : 'Henüz puan yok'
 
   const roleLabels: Record<string, { label: string, color: string, icon: any }> = {
     buyer: { label: 'Alıcı', color: 'text-blue-400 bg-blue-500/10', icon: UserCheck },
@@ -101,7 +101,7 @@ export default function ProfilePage() {
                     <GraduationCap className="w-3 h-3" />{profile.campus_name || 'Kampüs Doğrulanmış'}
                   </span>
                 )}
-                {ts >= 90 && (
+                {ts >= 4 && (
                   <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                     <Award className="w-3 h-3" />Güvenilir Satıcı
                   </span>
@@ -170,40 +170,30 @@ export default function ProfilePage() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-violet-400" />
-              <h2 className="text-sm font-semibold text-white">Trust Score</h2>
+              <Star className="w-5 h-5 text-amber-400" />
+              <h2 className="text-sm font-semibold text-white">Satıcı Puanı</h2>
             </div>
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full bg-gradient-to-r ${tsColor} text-white`}>{tsLabel}</span>
           </div>
           <div className="flex items-end gap-3 mb-3">
-            <span className="font-display text-5xl font-bold tracking-tight text-white">{ts}</span>
-            <span className="text-sm text-zinc-600 mb-2">/ 100</span>
+            <span className="font-display text-5xl font-bold tracking-tight text-white">{ts > 0 ? ts.toFixed(1) : '—'}</span>
+            <span className="text-sm text-zinc-600 mb-2">/ 5</span>
           </div>
           <div className="w-full bg-zinc-800 rounded-full h-2.5 mb-4">
-            <div className={`h-2.5 rounded-full bg-gradient-to-r ${tsColor} transition-all`} style={{ width: `${ts}%` }} />
+            <div className={`h-2.5 rounded-full bg-gradient-to-r ${tsColor} transition-all`} style={{ width: `${(ts / 5) * 100}%` }} />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">SLA içi teslim</span>
-              <span className="text-emerald-400">+Puan</span>
+              <span className="text-zinc-500">Toplam satış</span>
+              <span className="text-white font-medium">{profile?.total_sales || 0}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">Düşük dispute oranı</span>
-              <span className="text-emerald-400">+Puan</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">SLA kaçırma / iade</span>
-              <span className="text-red-400">−Puan</span>
+              <span className="text-zinc-500">Puan kaynağı</span>
+              <span className="text-zinc-400">Alıcı değerlendirmeleri</span>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-zinc-800">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">PDF/QR ilan yetkisi</span>
-              <span className={ts >= 90 ? 'text-emerald-400 font-medium' : 'text-zinc-600'}>
-                {ts >= 90 ? '✓ Aktif' : `${90 - ts} puan kaldı`}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs mt-1">
               <span className="text-zinc-500">İlan limiti</span>
               <span className="text-white font-medium">{profile?.listing_limit || 5} ilan</span>
             </div>

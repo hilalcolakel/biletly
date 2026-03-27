@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Ticket, ArrowLeft, Shield, AlertTriangle, Check, Clock, XCircle, Upload, Package } from 'lucide-react'
+import { Ticket, ArrowLeft, Shield, AlertTriangle, Check, Clock, XCircle, Upload, Package, Star } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -24,6 +24,8 @@ function OrdersContent() {
   const [sellOrders, setSellOrders] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'buying' | 'selling'>('buying')
   const [loading, setLoading] = useState(true)
+  const [ratingOrderId, setRatingOrderId] = useState<string | null>(null)
+  const [ratingValue, setRatingValue] = useState(0)
 
   useEffect(() => { loadData() }, [])
 
@@ -38,7 +40,26 @@ function OrdersContent() {
   }
 
   const handleConfirmDelivery = async (orderId: string) => {
-    await supabase.from('orders').update({ status: 'completed', confirmed_at: new Date().toISOString() }).eq('id', orderId)
+    setRatingOrderId(orderId)
+  }
+
+  const handleSubmitRating = async () => {
+    if (!ratingOrderId || ratingValue === 0) return
+    const order = buyOrders.find(o => o.id === ratingOrderId)
+    if (!order) return
+    // Update order as completed
+    await supabase.from('orders').update({ status: 'completed', confirmed_at: new Date().toISOString() }).eq('id', ratingOrderId)
+    // Get seller's current scores
+    const { data: seller } = await supabase.from('profiles').select('trust_score, total_sales').eq('id', order.seller_id).single()
+    if (seller) {
+      const currentTotal = seller.total_sales || 0
+      const currentScore = seller.trust_score || 0
+      // Calculate new average: (old_avg * old_count + new_rating) / (old_count + 1)
+      const newScore = parseFloat((((currentScore * currentTotal) + ratingValue) / (currentTotal + 1)).toFixed(1))
+      await supabase.from('profiles').update({ trust_score: newScore, total_sales: currentTotal + 1 }).eq('id', order.seller_id)
+    }
+    setRatingOrderId(null)
+    setRatingValue(0)
     loadData()
   }
 
@@ -90,13 +111,29 @@ function OrdersContent() {
                     <span className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full border ${status.color}`}><StatusIcon className="w-3 h-3" />{status.label}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-zinc-500 mb-3">
-                    <span>{order.listing?.quantity} bilet · {order.delivery_type === 'transfer' ? 'Transfer' : 'PDF/QR'}</span>
+                    <span>{order.listing?.quantity} bilet · PDF/QR</span>
                     <span className="font-display font-bold text-base text-white">₺{Number(order.amount).toLocaleString('tr-TR')}</span>
                   </div>
                   <div className="text-xs text-zinc-600 mb-3">{isBuyer ? `Satıcı: ${order.seller?.full_name || 'Anonim'}` : `Alıcı: ${order.buyer?.full_name || 'Anonim'}`}</div>
 
-                  {isBuyer && order.status === 'delivered' && (
-                    <button onClick={() => handleConfirmDelivery(order.id)} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg px-4 py-2.5 transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"><Check className="w-3.5 h-3.5" />Teslim Aldım — Onayla</button>
+                  {isBuyer && order.status === 'delivered' && ratingOrderId !== order.id && (
+                    <button onClick={() => handleConfirmDelivery(order.id)} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg px-4 py-2.5 transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"><Check className="w-3.5 h-3.5" />Teslim Aldım — Onayla & Puanla</button>
+                  )}
+                  {isBuyer && ratingOrderId === order.id && (
+                    <div className="space-y-3 p-3 bg-violet-500/5 border border-violet-500/10 rounded-xl">
+                      <p className="text-xs font-medium text-white">Satıcıyı puanla</p>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <button key={star} onClick={() => setRatingValue(star)} className="p-1 transition-all hover:scale-110">
+                            <Star className={`w-6 h-6 ${star <= ratingValue ? 'text-amber-400 fill-amber-400' : 'text-zinc-700'}`} />
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => { setRatingOrderId(null); setRatingValue(0) }} className="flex-1 text-xs text-zinc-500 hover:text-white py-2 rounded-lg transition-colors">İptal</button>
+                        <button onClick={handleSubmitRating} disabled={ratingValue === 0} className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg px-4 py-2 transition-all">Onayla</button>
+                      </div>
+                    </div>
                   )}
                   {!isBuyer && order.status === 'paid_escrow' && (
                     <button onClick={() => handleMarkDelivered(order.id)} className="w-full bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-medium rounded-lg px-4 py-2.5 transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"><Upload className="w-3.5 h-3.5" />Teslim Ettim</button>

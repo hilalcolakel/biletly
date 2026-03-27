@@ -193,7 +193,7 @@ function HowItWorks() {
     { number: '01', title: 'Keşfet', desc: 'Konser, spor ve tiyatro etkinliklerini keşfet. Aradığın bileti bul.', icon: Search, gradient: 'from-blue-500 to-cyan-400' },
     { number: '02', title: 'Teklif Ver', desc: 'Satıcıya fiyat teklifi gönder. Pazarlık et, anlaş.', icon: Banknote, gradient: 'from-orange-500 to-amber-400' },
     { number: '03', title: 'Güvenle Öde', desc: 'Ödemen emanete alınır. Bilet sana ulaşana kadar para güvende.', icon: Lock, gradient: 'from-[#5227FF] to-[#B19EEF]' },
-    { number: '04', title: 'Bileti Al', desc: 'Satıcı transfer eder, sen onayla. Sorun olursa otomatik iade.', icon: Ticket, gradient: 'from-emerald-500 to-teal-400' },
+    { number: '04', title: 'Bileti Al', desc: 'Satıcı PDF/QR dosyayı gönderir, sen onayla. Sorun olursa otomatik iade.', icon: Ticket, gradient: 'from-emerald-500 to-teal-400' },
   ]
 
   return (
@@ -233,7 +233,7 @@ function HowItWorks() {
 function Security() {
   const features = [
     { title: 'Emanet Ödeme', desc: 'Paran bilet eline geçene kadar emanette. Teslim onaylanmadan satıcıya aktarılmaz.', icon: Shield, color: 'text-[#B19EEF]', bg: 'bg-[#5227FF]/10' },
-    { title: 'Trust Score', desc: 'Her kullanıcının güven puanı var. Başarılı satışlar puanı yükseltir.', icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+    { title: 'Satıcı Puanı', desc: 'Her satış sonrası alıcı puanlama yapar. Yüksek puanlı satıcıları tercih et.', icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10' },
     { title: 'Otomatik İade', desc: 'SLA süresinde teslim olmazsa sistem otomatik iade başlatır.', icon: Zap, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
     { title: 'Bilet Koruması', desc: 'PDF biletler watermark ile korunur. Sahtecilik anında tespit edilir.', icon: Lock, color: 'text-[#FF9FFC]', bg: 'bg-[#FF9FFC]/10' },
   ]

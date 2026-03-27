@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Ticket, ArrowLeft, Shield, AlertTriangle, Lock, Music, Trophy, Drama, PartyPopper, HelpCircle } from 'lucide-react'
+import { Ticket, ArrowLeft, Music, Trophy, Drama, PartyPopper } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function NewListingPage() {
@@ -12,7 +12,6 @@ export default function NewListingPage() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [trustScore, setTrustScore] = useState(50)
 
   const [form, setForm] = useState({
     // Event info
@@ -28,24 +27,19 @@ export default function NewListingPage() {
     section_info: '',
     asking_price: '',
     min_price: '',
-    listing_type: 'transfer',
   })
 
   useState(() => {
-    const loadTrust = async () => {
+    const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/auth/login'); return }
-      const { data: profile } = await supabase.from('profiles').select('trust_score').eq('id', user.id).single()
-      if (profile) setTrustScore(profile.trust_score)
     }
-    loadTrust()
+    checkAuth()
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
-
-  const canUsePdfQr = trustScore >= 90
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,12 +58,9 @@ export default function NewListingPage() {
 
     const eventDate = new Date(`${form.event_date}T${form.event_time}`)
 
-    // PDF/QR check
-    if (form.listing_type === 'pdf_qr') {
-      if (!canUsePdfQr) { setError('PDF/QR ilan için Trust Score ≥ 90 gerekli.'); setLoading(false); return }
-      const hoursUntil = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60)
-      if (hoursUntil < 72) { setError('PDF/QR ilan etkinliğe 72+ saat varken açılabilir.'); setLoading(false); return }
-    }
+    // 72-hour rule for PDF/QR
+    const hoursUntil = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60)
+    if (hoursUntil < 72) { setError('İlan etkinliğe 72+ saat varken açılabilir.'); setLoading(false); return }
 
     // 1. Create or find event
     const { data: existingEvents } = await supabase
@@ -110,7 +101,7 @@ export default function NewListingPage() {
       .insert({
         event_id: eventId,
         seller_id: user.id,
-        listing_type: form.listing_type,
+        listing_type: 'pdf_qr',
         quantity: parseInt(form.quantity),
         section_info: form.section_info || null,
         asking_price: parseFloat(form.asking_price),
@@ -242,31 +233,9 @@ export default function NewListingPage() {
             </div>
 
             <div className="space-y-4">
-              {/* Delivery type */}
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-2">Teslim Tipi</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button type="button" onClick={() => setForm({ ...form, listing_type: 'transfer' })}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      form.listing_type === 'transfer' ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'
-                    }`}>
-                    <Shield className={`w-5 h-5 mb-2 ${form.listing_type === 'transfer' ? 'text-emerald-400' : 'text-zinc-600'}`} />
-                    <p className="text-sm font-semibold text-white">Transfer</p>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">Önerilen yöntem</p>
-                  </button>
-                  <button type="button"
-                    onClick={() => { if (canUsePdfQr) setForm({ ...form, listing_type: 'pdf_qr' }) }}
-                    disabled={!canUsePdfQr}
-                    className={`p-4 rounded-xl border text-left transition-all relative ${
-                      form.listing_type === 'pdf_qr' ? 'border-amber-500/50 bg-amber-500/10' :
-                      !canUsePdfQr ? 'border-zinc-800/50 opacity-40 cursor-not-allowed' : 'border-zinc-800 hover:border-zinc-700'
-                    }`}>
-                    {!canUsePdfQr && <Lock className="absolute top-3 right-3 w-3.5 h-3.5 text-zinc-600" />}
-                    <AlertTriangle className={`w-5 h-5 mb-2 ${form.listing_type === 'pdf_qr' ? 'text-amber-400' : 'text-zinc-600'}`} />
-                    <p className="text-sm font-semibold text-white">PDF/QR</p>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">{!canUsePdfQr ? `Trust ≥ 90 gerekli (${trustScore})` : 'Dosya paylaşımı'}</p>
-                  </button>
-                </div>
+              {/* Info about delivery */}
+              <div className="p-3 bg-violet-500/5 border border-violet-500/10 rounded-xl">
+                <p className="text-xs text-violet-400/80">Tüm biletler PDF veya QR kod olarak teslim edilir.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

@@ -1,16 +1,14 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Ticket, Calendar, MapPin, ArrowLeft, Shield, AlertTriangle, User, Star } from 'lucide-react'
+import { Ticket, Calendar, MapPin, ArrowLeft, User, Star } from 'lucide-react'
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
   const { data: event } = await supabase.from('events').select('*').eq('id', params.id).single()
   if (!event) notFound()
-  const { data: listings } = await supabase.from('listings').select('*, seller:profiles(id, full_name, trust_score, total_sales)').eq('event_id', params.id).eq('status', 'active').order('listing_type', { ascending: true }).order('asking_price', { ascending: true })
+  const { data: listings } = await supabase.from('listings').select('*, seller:profiles(id, full_name, trust_score, total_sales)').eq('event_id', params.id).eq('status', 'active').order('asking_price', { ascending: true })
   const date = new Date(event.event_date)
-  const transferListings = listings?.filter((l: any) => l.listing_type === 'transfer') || []
-  const pdfListings = listings?.filter((l: any) => l.listing_type === 'pdf_qr') || []
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -37,22 +35,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
         <h2 className="font-display text-xl font-bold text-white mb-6">İlanlar</h2>
 
-        {transferListings.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4"><Shield className="w-4 h-4 text-emerald-400" /><h3 className="text-sm font-semibold text-zinc-300">Transfer İlanları</h3><span className="text-xs text-zinc-600">— Önerilen</span></div>
-            <div className="space-y-2">{transferListings.map((l: any) => <ListingRow key={l.id} listing={l} />)}</div>
+        {listings && listings.length > 0 ? (
+          <div className="space-y-2">
+            {listings.map((l: any) => <ListingRow key={l.id} listing={l} />)}
           </div>
-        )}
-
-        {pdfListings.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-4 h-4 text-amber-400" /><h3 className="text-sm font-semibold text-zinc-300">PDF/QR İlanları</h3><span className="text-xs text-zinc-600">— Yüksek risk</span></div>
-            <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl mb-4"><p className="text-xs text-amber-400/80">PDF/QR biletlerde dosya paylaşılır, transfer yapılmaz. Risk daha yüksektir.</p></div>
-            <div className="space-y-2">{pdfListings.map((l: any) => <ListingRow key={l.id} listing={l} />)}</div>
-          </div>
-        )}
-
-        {(!listings || listings.length === 0) && (
+        ) : (
           <div className="text-center py-16">
             <div className="w-14 h-14 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4"><Ticket className="w-6 h-6 text-zinc-700" /></div>
             <h3 className="font-display text-lg font-semibold text-white mb-1">Henüz ilan yok</h3>
@@ -74,7 +61,7 @@ function ListingRow({ listing }: { listing: any }) {
         <div>
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-white">{seller?.full_name || 'Anonim'}</p>
-            {seller?.trust_score >= 90 && <span className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded"><Star className="w-2.5 h-2.5" />{seller.trust_score}</span>}
+            {seller?.trust_score >= 4 && <span className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded"><Star className="w-2.5 h-2.5" />{seller.trust_score.toFixed(1)}</span>}
           </div>
           <p className="text-xs text-zinc-500">{listing.quantity} bilet · {listing.section_info || 'Bölüm belirtilmemiş'}</p>
         </div>
@@ -82,7 +69,7 @@ function ListingRow({ listing }: { listing: any }) {
       <div className="flex items-center gap-4">
         <div className="text-right">
           <p className="font-display text-lg font-bold text-white">₺{Number(listing.asking_price).toLocaleString('tr-TR')}</p>
-          <p className="text-[10px] text-zinc-600">{listing.listing_type === 'transfer' ? 'Transfer' : 'PDF/QR'}</p>
+          <p className="text-[10px] text-zinc-600">PDF/QR</p>
         </div>
         <Link href={`/listings/${listing.id}`} className="text-xs font-semibold text-white bg-gradient-to-r from-violet-500 to-purple-600 px-4 py-2 rounded-full active:scale-[0.97]">Teklif Ver</Link>
       </div>
